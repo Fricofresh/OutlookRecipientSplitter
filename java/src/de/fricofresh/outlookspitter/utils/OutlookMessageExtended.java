@@ -39,22 +39,19 @@ public class OutlookMessageExtended extends OutlookMessage {
 	public void setEMailRecipientTo(List<String> emailAddresses) {
 		
 		clearEMailRecipient(Type.TO);
-		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress))
-				.forEach(this::addRecipient);
+		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress)).forEach(this::addRecipient);
 	}
 	
 	public void setEMailRecipientCC(List<String> emailAddresses) {
 		
 		clearEMailRecipient(Type.CC);
-		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress))
-				.forEach(this::addRecipient);
+		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress)).forEach(this::addRecipient);
 	}
 	
 	public void setEMailRecipientBCC(List<String> emailAddresses) {
 		
 		clearEMailRecipient(Type.BCC);
-		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress))
-				.forEach(this::addRecipient);
+		emailAddresses.stream().map(emailAddress -> new OutlookMessageRecipient(Type.TO, emailAddress)).forEach(this::addRecipient);
 	}
 	
 	public void setEMailAllRecipient(List<OutlookMessageRecipient> emailAddresses) {
@@ -75,8 +72,7 @@ public class OutlookMessageExtended extends OutlookMessage {
 	
 	public static List<String> splitAdresses(String adresses) {
 		
-		return Arrays.asList(adresses.split(";")).stream().map(OutlookMessageExtended::extractEmail)
-				.collect(Collectors.toList());
+		return Arrays.asList(adresses.split(";")).stream().map(OutlookMessageExtended::extractEmail).collect(Collectors.toList());
 	}
 	
 	public void writeTo(Path pathToFile) throws IOException {
@@ -84,4 +80,26 @@ public class OutlookMessageExtended extends OutlookMessage {
 		writeTo(pathToFile.toFile());
 	}
 	
+	public void writeAndOpen(Path pathToFile) throws IOException {
+		
+		writeTo(pathToFile.toFile());
+	}
+	
+	@Override
+	public Object clone() {
+		
+		try {
+			return (OutlookMessageExtended) super.clone();
+		}
+		catch (CloneNotSupportedException e) {
+			OutlookMessageExtended result = new OutlookMessageExtended();
+			result.setEMailAllRecipient(this.getAllRecipients());
+			result.setFrom(this.getFrom());
+			result.setPlainTextBody(this.getPlainTextBody());
+			result.setReplyTo(this.getReplyTo());
+			result.setSentDate(this.getSentDate());
+			result.setSubject(this.getSubject());
+			return result;
+		}
+	}
 }
