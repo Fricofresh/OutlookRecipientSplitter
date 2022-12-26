@@ -3,11 +3,14 @@ package de.fricofresh.outlookspitter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -24,63 +27,85 @@ public class OutlookSplitterCli {
 		// TODO extract Options to method
 		Options cliOptions = new Options();
 		
-		Option msgFileOption = Option.builder().argName("i").longOpt("msginput").required(true)
-				.desc("The Path to the .msg file").build();
+		Option msgFileOption = Option.builder().option("i").longOpt("msginput").hasArg().required(true).desc("The Path to the .msg file").build();
 		
-		Option emailToAdressesOption = Option.builder().argName("t").longOpt("to").hasArgs().required(true)
-				.desc("The E-Mail adresses to send it").build();
+		Option emailToAdressesOption = Option.builder().option("t").longOpt("to").argName("E-Mail-Adresses").hasArgs().required(false).desc("The E-Mail adresses to send it").build();
+		Option splitToAdressesOption = Option.builder().option("st").longOpt("splitTo").hasArg(false).desc("TO E-Mail-Adresses should be splitted").build();
 		
-		// TODO Check if bool is getting returned
-		Option splitToAdressesOption = Option.builder().argName("ts").longOpt("splitTo").hasArg(false)
-				.desc("TO E-Mail-Adresses should be splitted").build();
+		Option emailCCAdressesOption = Option.builder().option("c").longOpt("cc").argName("E-Mail-Adresses").hasArgs().required(false).desc("The E-Mail adresses to split").build();
+		Option splitCCAdressesOption = Option.builder().option("sc").longOpt("splitCC").hasArg(false).desc("CC E-Mail-Adresses should be splitted").build();
 		
-		Option emailCCAdressesOption = Option.builder().argName("c").longOpt("cc").hasArgs().required(true)
-				.desc("The E-Mail adresses to split").build();
-		Option splitCCAdressesOption = Option.builder().argName("ts").longOpt("splitTo").hasArg(false)
-				.desc("CC E-Mail-Adresses should be splitted").build();
+		Option emailBCCAdressesOption = Option.builder().option("b").longOpt("bcc").argName("E-Mail-Adresses").hasArgs().required(false).desc("The E-Mail adresses to split").build();
+		Option splitBCCAdressesOption = Option.builder().option("sb").longOpt("splitBCC").hasArg(false).desc("BCC E-Mail-Adresses should be splitted").build();
 		
-		Option emailBCCAdressesOption = Option.builder().argName("b").longOpt("bcc").hasArgs().required(true)
-				.desc("The E-Mail adresses to split").build();
-		Option splitBCCAdressesOption = Option.builder().argName("ts").longOpt("splitTo").hasArg(false)
-				.desc("BCC E-Mail-Adresses should be splitted").build();
-		// TODO Change desc to something more understandable
-		Option splitValueOption = Option.builder().argName("s").longOpt("split").hasArg().required(true)
-				.desc("Amount to split the E-Mail adresses into").type(Integer.TYPE).build();
+		Option splitValueOption = Option.builder().option("s").longOpt("split").hasArg().required(true).desc("The number of email addresses when to split").type(Integer.TYPE).build();
+		// TODO
 		// Option openAfterFinishedOption =
-		// Option.builder().argName("").longOpt("").desc("Open files when
+		// Option.builder().option("").longOpt("").desc("Open files when
 		// finished").build();
-		Option outputDirOption = Option.builder().argName("o").longOpt("outputdir").hasArg().required(true).desc("")
-				.build();
+		
+		Option prefixFileNameOption = Option.builder().option("p").longOpt("prefix").hasArg().required(false).optionalArg(true).desc("Add a Prefix to the files").build();
+		Option suffixFileNameOption = Option.builder().option("s").longOpt("suffix").hasArg().required(false).optionalArg(true).desc("Add a Suffix to the files").build();
+		Option outputDirOption = Option.builder().option("o").longOpt("outputdir").hasArg().required(false).desc("").build();
 		
 		// TODO add other Option
 		cliOptions.addOption(msgFileOption);
 		cliOptions.addOption(emailToAdressesOption);
+		cliOptions.addOption(splitToAdressesOption);
+		cliOptions.addOption(emailCCAdressesOption);
+		cliOptions.addOption(splitCCAdressesOption);
+		cliOptions.addOption(emailBCCAdressesOption);
+		cliOptions.addOption(splitBCCAdressesOption);
 		cliOptions.addOption(splitValueOption);
+		// cliOptions.addOption(openAfterFinishedOption);
+		cliOptions.addOption(prefixFileNameOption);
+		cliOptions.addOption(suffixFileNameOption);
+		cliOptions.addOption(outputDirOption);
 		
-		DefaultParser defaultParser = new DefaultParser();
+		if (checkHelpCommand(args))
+			printHelp(cliOptions);
+		
+		DefaultParser defaultParser = DefaultParser.builder().setStripLeadingAndTrailingQuotes(true).build();
 		CommandLine cmd = defaultParser.parse(cliOptions, args);
-		Path filePath = new File(cmd.getOptionValue(msgFileOption)).toPath();
 		try {
+			Path filePath = new File(cmd.getOptionValue(msgFileOption)).toPath();
 			CreateSplittedFilesParameter cSFParameter = new CreateSplittedFilesParameter();
 			OutlookMessageExtended outlookMessage = new OutlookMessageExtended(filePath.toFile());
-			String emailAdresses = cmd.getOptionValue(emailToAdressesOption);
-			int splitValue = (Integer) cmd.getParsedOptionValue(splitValueOption);
+			String[] emailToAdresses = cmd.getOptionValues(emailToAdressesOption);
+			String[] emailCCAdresses = cmd.getOptionValues(emailCCAdressesOption);
+			String[] emailBCCAdresses = cmd.getOptionValues(emailBCCAdressesOption);
+			int splitValue = Integer.valueOf(cmd.getOptionValue(splitValueOption));
 			Optional<String> outputDir = Optional.ofNullable(cmd.getOptionValue(outputDirOption));
 			
-			// TODO Check if splitXXAdressOption is present or true
-			List<OutlookMessageRecipient> toOutlookRecipientsList = OutlookSplitterProcessorUtil
-					.receiveOutlookRecipients(emailAdresses, Type.TO);
-			List<OutlookMessageRecipient> ccOutlookRecipientsList = OutlookSplitterProcessorUtil
-					.receiveOutlookRecipients(emailAdresses, Type.CC);
-			List<OutlookMessageRecipient> bccOutlookRecipientsList = OutlookSplitterProcessorUtil
-					.receiveOutlookRecipients(emailAdresses, Type.BCC);
+			List<OutlookMessageRecipient> toOutlookRecipientsList = getOutlookRecipientsList(emailToAdresses, Type.TO);
+			List<OutlookMessageRecipient> ccOutlookRecipientsList = getOutlookRecipientsList(emailCCAdresses, Type.CC);
+			List<OutlookMessageRecipient> bccOutlookRecipientsList = getOutlookRecipientsList(emailBCCAdresses, Type.BCC);
+			
+			List<OutlookMessageRecipient> recipientsForAll = new ArrayList<>();
+			List<OutlookMessageRecipient> recipientsToSplit = new ArrayList<>();
+			
+			if (cmd.hasOption(splitToAdressesOption))
+				recipientsToSplit.addAll(toOutlookRecipientsList);
+			else
+				recipientsForAll.addAll(toOutlookRecipientsList);
+			
+			if (cmd.hasOption(splitCCAdressesOption))
+				recipientsToSplit.addAll(ccOutlookRecipientsList);
+			else
+				recipientsForAll.addAll(ccOutlookRecipientsList);
+			
+			if (cmd.hasOption(splitBCCAdressesOption))
+				recipientsToSplit.addAll(bccOutlookRecipientsList);
+			else
+				recipientsForAll.addAll(bccOutlookRecipientsList);
 			
 			cSFParameter.setEmailMessage(outlookMessage);
 			cSFParameter.setOutputDir(outputDir);
-			cSFParameter.setRecipients(toOutlookRecipientsList);
+			cSFParameter.setRecipients(recipientsForAll);
+			cSFParameter.setRecipientsToSplit(recipientsToSplit);
 			cSFParameter.setSplit(splitValue);
-			// cSFParameter.setPrefix();
-			// cSFParameter.setSuffix();
+			cSFParameter.setPrefix(Optional.ofNullable(cmd.getOptionValue(prefixFileNameOption)));
+			cSFParameter.setSuffix(Optional.ofNullable(cmd.getOptionValue(suffixFileNameOption)));
 			
 			OutlookSplitterProcessorUtil.createSplittedFiles(cSFParameter);
 		}
@@ -88,6 +113,39 @@ public class OutlookSplitterCli {
 			System.err.println("A Error accured at reading the .msg file.");
 			e.printStackTrace();
 		}
+		catch (Exception e) {
+			printHelp(cliOptions);
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private static List<OutlookMessageRecipient> getOutlookRecipientsList(String[] emailAdresses, Type type) {
+		
+		if (emailAdresses == null)
+			return new ArrayList<>();
+		
+		List<OutlookMessageRecipient> result = new ArrayList<>();
+		for (String email : emailAdresses) {
+			result.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(email, type));
+		}
+		
+		return result;
+	}
+	
+	private static boolean checkHelpCommand(String[] args) {
+		
+		String longName = "help";
+		String shortName = "h";
+		
+		return Arrays.stream(args).anyMatch(s -> s.replace("-", "").equals(longName) || s.replace("-", "").equals(shortName));
+		
+	}
+	
+	private static void printHelp(Options options) {
+		
+		HelpFormatter helpFormatter = new HelpFormatter();
+		helpFormatter.printHelp("OutlookSplitterCli.exe", options);
 		
 	}
 	
