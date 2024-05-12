@@ -16,7 +16,7 @@ import de.fricofresh.outlookspitter.CreateSplittedFilesParameter;
 
 public class OutlookSplitterProcessorUtil {
 	
-	private final String guessedOutlookPath = "%ProgramFiles%\\Microsoft Office\\root\\";
+	private final static String guessedOutlookPath = "%ProgramFiles%\\Microsoft Office\\root\\";
 	
 	public static List<OutlookMessageRecipient> receiveOutlookRecipients(String emailAdresses, Type type) {
 		
@@ -25,9 +25,9 @@ public class OutlookSplitterProcessorUtil {
 		return toOutlookRecipientsList;
 	}
 	
-	public void openFiles(List<Path> files, Optional<String> outlookPath) throws IOException {
+	public static void openFiles(List<Path> files, Optional<String> outlookPath) throws IOException {
 		
-		Optional<Path> foundOutlookPath = Files.walk(Paths.get(guessedOutlookPath), 2).filter(e -> e.getFileName().equals("OUTLOOK.EXE")).findFirst();
+		Optional<Path> foundOutlookPath = Files.walk(Paths.get(guessedOutlookPath), 2).filter(e -> e.getFileName().toString().equals("OUTLOOK.EXE")).findFirst();
 		
 		for (Path file : files)
 			new ProcessBuilder().command("start", outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()), file.toAbsolutePath().toString()).start();
@@ -42,17 +42,14 @@ public class OutlookSplitterProcessorUtil {
 		
 		List<Path> result = new ArrayList<>();
 		
-		OutlookMessageExtended baseMessage = (OutlookMessageExtended) parameterObject.getEmailMessage();
-		OutlookMessageExtended tempMessage = (OutlookMessageExtended) baseMessage.clone();
+		OutlookMessageExtended tempMessage = copyCloneMessage(parameterObject);
 		
 		for (int i = 0; i < parameterObject.getRecipientsToSplit().size(); i++) {
-			// TODO set parameterObject.getRecipients as fixed for all messages
 			OutlookMessageRecipient recipient = parameterObject.getRecipientsToSplit().get(i);
 			try {
 				if (i != 0 && i % parameterObject.getSplit() == 0) {
-					tempMessage = writeTempMessage(parameterObject, result, baseMessage, tempMessage);
+					tempMessage = writeTempMessage(parameterObject, result, tempMessage);
 				}
-				// TODO Loop to all Messages and export it after that
 				tempMessage.addRecipient(recipient);
 			}
 			catch (IOException e) {
@@ -60,7 +57,7 @@ public class OutlookSplitterProcessorUtil {
 			}
 		}
 		try {
-			writeTempMessage(parameterObject, result, baseMessage, tempMessage);
+			writeTempMessage(parameterObject, result, tempMessage);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -69,18 +66,46 @@ public class OutlookSplitterProcessorUtil {
 		return result;
 	}
 	
-	private static OutlookMessageExtended writeTempMessage(CreateSplittedFilesParameter parameterObject, List<Path> result, OutlookMessageExtended baseMessage, OutlookMessageExtended tempMessage) throws IOException {
+	private static OutlookMessageExtended writeTempMessage(CreateSplittedFilesParameter parameterObject, List<Path> result, OutlookMessageExtended tempMessage) throws IOException {
 		
 		Path outputFile;
 		if (!parameterObject.getOutputDir().isPresent())
 			outputFile = Files.createTempFile(parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject(), parameterObject.getSuffix().orElse(".msg"));
 		else {
 			outputFile = Files.createDirectories(new File(parameterObject.getOutputDir().get(), "").toPath());
-			outputFile = Files.createFile(new File(parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject() + parameterObject.getSuffix().orElse(".msg")).toPath());
+			outputFile = Files
+					.createFile(Path.of(outputFile.toString(), parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject() + "_" + result.size() + parameterObject.getSuffix().orElse(".msg")));
+		}
+		switch (parameterObject.getMailGenMehtod()) {
+			case POICOPY:
+			case POICLONE:
+				tempMessage.writeTo(outputFile.toFile());
+				break;
+			case POIADVANCEDCOPY:
+			case POIADVANCEDCLONE:
+			default:
+				tempMessage.writeToEditiable(outputFile.toFile());
+				break;
 		}
 		result.add(outputFile);
-		tempMessage.writeTo(outputFile.toFile());
-		tempMessage = (OutlookMessageExtended) baseMessage.clone();
+		tempMessage = copyCloneMessage(parameterObject);
+		return tempMessage;
+	}
+	
+	private static OutlookMessageExtended copyCloneMessage(CreateSplittedFilesParameter parameterObject) {
+		
+		OutlookMessageExtended baseMessage = (OutlookMessageExtended) parameterObject.getEmailMessage();
+		OutlookMessageExtended tempMessage;
+		switch (parameterObject.getMailGenMehtod()) {
+			case POICOPY:
+			case POIADVANCEDCOPY:
+				tempMessage = (OutlookMessageExtended) baseMessage.cloneCopy();
+				break;
+			case POICLONE:
+			case POIADVANCEDCLONE:
+			default:
+				tempMessage = (OutlookMessageExtended) baseMessage.clone();
+		}
 		return tempMessage;
 	}
 	

@@ -10,7 +10,6 @@ public class CreateSplittedFilesParameter {
 	
 	private List<OutlookMessageRecipient> recipients;
 	
-	// TODO getter and setter
 	private List<OutlookMessageRecipient> recipientsToSplit;
 	
 	private OutlookMessage emailMessage;
@@ -23,12 +22,26 @@ public class CreateSplittedFilesParameter {
 	
 	private Optional<String> outputDir = Optional.empty();
 	
+	private MailGenMethod mailGenMehtod = MailGenMethod.POI;
+	
 	public CreateSplittedFilesParameter() {
 		
 	}
 	
-	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, OutlookMessage emailMessage,
-			int split, Optional<String> prefix, Optional<String> suffix, Optional<String> outputDir) {
+	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, List<OutlookMessageRecipient> recipientsToSplit, OutlookMessage emailMessage, int split, Optional<String> prefix, Optional<String> suffix,
+			Optional<String> outputDir, MailGenMethod mailGenMehtod) {
+		
+		this.recipients = recipients;
+		this.recipientsToSplit = recipientsToSplit;
+		this.emailMessage = emailMessage;
+		this.split = split;
+		this.prefix = prefix;
+		this.suffix = suffix;
+		this.outputDir = outputDir;
+		this.mailGenMehtod = mailGenMehtod;
+	}
+	
+	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, OutlookMessage emailMessage, int split, Optional<String> prefix, Optional<String> suffix, Optional<String> outputDir) {
 		
 		this.recipients = recipients;
 		this.emailMessage = emailMessage;
@@ -106,5 +119,15 @@ public class CreateSplittedFilesParameter {
 	public void setOutputDir(Optional<String> outputDir) {
 		
 		this.outputDir = outputDir;
+	}
+	
+	public MailGenMethod getMailGenMehtod() {
+		
+		return mailGenMehtod;
+	}
+	
+	public void setMailGenMehtod(MailGenMethod mailGenMehtod) {
+		
+		this.mailGenMehtod = mailGenMehtod;
 	}
 }
