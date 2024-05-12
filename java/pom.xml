@@ -2,7 +2,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>Outlook_Recipient_Splitter</groupId>
+	<groupId>de.fricofresh</groupId>
 	<artifactId>Outlook_Recipient_Splitter</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<build>
@@ -12,7 +12,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<release>8</release>
+					<release>11</release>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -21,17 +21,51 @@
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
-			<version>1.5.0</version>
+			<version>1.7.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-scratchpad</artifactId>
-			<version>5.2.3</version>
+			<version>5.2.5</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-core</artifactId>
+		    <version>2.23.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-api</artifactId>
+		    <version>2.23.1</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.astorm</groupId>
 			<artifactId>jotlmsg</artifactId>
-			<version>2.0</version>
+			<version>2.0.1</version>
 		</dependency>
+<!--		<dependency>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
+			<version>1.3.5</version>
+			<scope>test</scope>
+		</dependency>-->
+<!--		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>simple-java-mail</artifactId>
+			<version>7.5.2</version>
+		</dependency>-->
+		<!--		<dependency>
+			<groupId>com.aspose</groupId>
+			<artifactId>aspose-email</artifactId>
+			<version>22.9</version>
+			<classifier>jdk17</classifier>
+		</dependency>-->
 	</dependencies>
+	<!--	<repositories>
+		<repository>
+			<id>aspose-maven-repository</id>
+			<name>Aspose Maven Repository</name>
+			<url>https://releases.aspose.com/java/repo/</url>
+		</repository>
+	</repositories>-->
 </project>
