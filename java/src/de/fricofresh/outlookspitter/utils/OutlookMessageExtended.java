@@ -109,7 +109,7 @@ public class OutlookMessageExtended extends OutlookMessage {
 	public void writeAndOpen(Path pathToFile) throws IOException {
 		
 		writeTo(pathToFile.toFile());
-		OutlookSplitterProcessorUtil.openFiles(Arrays.asList(pathToFile), Optional.empty());
+		MailSplitterUtil.openFiles(Arrays.asList(pathToFile), Optional.empty());
 	}
 	
 	/**

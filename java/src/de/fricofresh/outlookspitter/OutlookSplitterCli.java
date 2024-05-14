@@ -16,10 +16,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.hsmf.MAPIMessage;
 
 import ch.astorm.jotlmsg.OutlookMessageRecipient;
 import ch.astorm.jotlmsg.OutlookMessageRecipient.Type;
-import de.fricofresh.outlookspitter.utils.OutlookMessageExtended;
+import de.fricofresh.outlookspitter.utils.JavaMailMessageUtil;
+import de.fricofresh.outlookspitter.utils.MailSplitterUtil;
 import de.fricofresh.outlookspitter.utils.OutlookSplitterProcessorUtil;
 
 public class OutlookSplitterCli {
@@ -52,13 +54,14 @@ public class OutlookSplitterCli {
 		
 		Option splitValueOption = Option.builder().option("s").longOpt("split").hasArg().required(true).desc("The number of email addresses when to split").type(Integer.TYPE).build();
 		// TODO Add optional arguments for setting the outlook.exe path
-		Option openAfterFinishedOption = Option.builder().option("oc").longOpt("openCreated").optionalArg(true).desc("Open files when finished").build();
+		Option openAfterFinishedOption = Option.builder().option("oc").longOpt("openCreated").optionalArg(true).desc("Open files when finished. A path to the Outlook.exe can be provided.").build();
 		
 		Option prefixFileNameOption = Option.builder().option("p").longOpt("prefix").hasArg().required(false).optionalArg(true).desc("Add a Prefix to the files").build();
 		Option suffixFileNameOption = Option.builder().option("su").longOpt("suffix").hasArg().required(false).optionalArg(true).desc("Add a Suffix to the files").build();
 		Option outputDirOption = Option.builder().option("o").longOpt("outputdir").hasArg().required(false).desc("").build();
 		Option mailGenMethodOption = Option.builder().option("mgm").longOpt("mailGenMethod").hasArg().required(false).converter(MailGenMethod::valueOf)
 				.desc("Trying to create Messages with other Methods. Default Method is POI. Methots are:" + MailGenMethod.values()).build();
+		Option emailHTMLTextPathOption = Option.builder().option("ht").longOpt("html").hasArg().required(false).build();
 		
 		cliOptions.addOption(msgFileOption);
 		cliOptions.addOption(emailToAdressesOption);
@@ -73,6 +76,7 @@ public class OutlookSplitterCli {
 		cliOptions.addOption(suffixFileNameOption);
 		cliOptions.addOption(outputDirOption);
 		cliOptions.addOption(mailGenMethodOption);
+		cliOptions.addOption(emailHTMLTextPathOption);
 		
 		if (checkHelpCommand(args))
 			printHelp(cliOptions);
@@ -82,13 +86,14 @@ public class OutlookSplitterCli {
 		try {
 			Path filePath = new File(cmd.getOptionValue(msgFileOption)).toPath();
 			CreateSplittedFilesParameter cSFParameter = new CreateSplittedFilesParameter();
-			OutlookMessageExtended outlookMessage = new OutlookMessageExtended(filePath.toFile());
+			MAPIMessage outlookMessage = new MAPIMessage(filePath.toFile());
 			String[] emailToAdresses = cmd.getOptionValues(emailToAdressesOption);
 			String[] emailCCAdresses = cmd.getOptionValues(emailCCAdressesOption);
 			String[] emailBCCAdresses = cmd.getOptionValues(emailBCCAdressesOption);
 			int splitValue = Integer.valueOf(cmd.getOptionValue(splitValueOption));
 			Optional<String> outputDir = Optional.ofNullable(cmd.getOptionValue(outputDirOption));
 			MailGenMethod mailGenMethod = cmd.getParsedOptionValue(mailGenMethodOption, MailGenMethod.POI);
+			Optional<String> emailHTMLTextPath = Optional.ofNullable(cmd.getOptionValue(emailHTMLTextPathOption));
 			
 			List<OutlookMessageRecipient> toOutlookRecipientsList = getOutlookRecipientsList(emailToAdresses, Type.TO);
 			List<OutlookMessageRecipient> ccOutlookRecipientsList = getOutlookRecipientsList(emailCCAdresses, Type.CC);
@@ -120,11 +125,24 @@ public class OutlookSplitterCli {
 			cSFParameter.setMailGenMehtod(mailGenMethod);
 			cSFParameter.setPrefix(Optional.ofNullable(cmd.getOptionValue(prefixFileNameOption)));
 			cSFParameter.setSuffix(Optional.ofNullable(cmd.getOptionValue(suffixFileNameOption)));
-			
-			List<Path> createSplittedFiles = OutlookSplitterProcessorUtil.createSplittedFiles(cSFParameter);
-			
+			cSFParameter.setEmailPath(filePath);
+			cSFParameter.setEmailHTMLMessage(emailHTMLTextPath);
+			List<Path> createSplittedFiles = Arrays.asList();
+			switch (mailGenMethod) {
+				case JAVAMAIL:
+					createSplittedFiles = JavaMailMessageUtil.createSplittedFiles(cSFParameter);
+					break;
+				case POICOPY:
+				case POICLONE:
+				case POIADVANCEDCOPY:
+				case POIADVANCEDCLONE:
+				case POI:
+				default:
+					createSplittedFiles = OutlookSplitterProcessorUtil.createSplittedFiles(cSFParameter);
+					break;
+			}
 			if (cmd.hasOption(openAfterFinishedOption)) {
-				OutlookSplitterProcessorUtil.openFiles(createSplittedFiles, Optional.empty());
+				MailSplitterUtil.openFiles(createSplittedFiles, Optional.empty());
 			}
 		}
 		catch (IOException e) {
@@ -132,7 +150,7 @@ public class OutlookSplitterCli {
 		}
 		catch (Exception e) {
 			printHelp(cliOptions);
-			log.error(e);
+			log.error(e, e);
 		}
 	}
 	

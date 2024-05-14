@@ -1,9 +1,11 @@
 package de.fricofresh.outlookspitter;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import ch.astorm.jotlmsg.OutlookMessage;
+import org.apache.poi.hsmf.MAPIMessage;
+
 import ch.astorm.jotlmsg.OutlookMessageRecipient;
 
 public class CreateSplittedFilesParameter {
@@ -12,7 +14,9 @@ public class CreateSplittedFilesParameter {
 	
 	private List<OutlookMessageRecipient> recipientsToSplit;
 	
-	private OutlookMessage emailMessage;
+	private MAPIMessage emailMessage;
+	
+	private Path emailPath;
 	
 	private int split;
 	
@@ -22,26 +26,15 @@ public class CreateSplittedFilesParameter {
 	
 	private Optional<String> outputDir = Optional.empty();
 	
+	private Optional<String> emailHTMLTextPath = Optional.empty();
+	
 	private MailGenMethod mailGenMehtod = MailGenMethod.POI;
 	
 	public CreateSplittedFilesParameter() {
 		
 	}
 	
-	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, List<OutlookMessageRecipient> recipientsToSplit, OutlookMessage emailMessage, int split, Optional<String> prefix, Optional<String> suffix,
-			Optional<String> outputDir, MailGenMethod mailGenMehtod) {
-		
-		this.recipients = recipients;
-		this.recipientsToSplit = recipientsToSplit;
-		this.emailMessage = emailMessage;
-		this.split = split;
-		this.prefix = prefix;
-		this.suffix = suffix;
-		this.outputDir = outputDir;
-		this.mailGenMehtod = mailGenMehtod;
-	}
-	
-	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, OutlookMessage emailMessage, int split, Optional<String> prefix, Optional<String> suffix, Optional<String> outputDir) {
+	public CreateSplittedFilesParameter(List<OutlookMessageRecipient> recipients, MAPIMessage emailMessage, int split, Optional<String> prefix, Optional<String> suffix, Optional<String> outputDir) {
 		
 		this.recipients = recipients;
 		this.emailMessage = emailMessage;
@@ -71,12 +64,12 @@ public class CreateSplittedFilesParameter {
 		this.recipientsToSplit = recipientsToSplit;
 	}
 	
-	public OutlookMessage getEmailMessage() {
+	public MAPIMessage getEmailMessage() {
 		
 		return emailMessage;
 	}
 	
-	public void setEmailMessage(OutlookMessage emailMessage) {
+	public void setEmailMessage(MAPIMessage emailMessage) {
 		
 		this.emailMessage = emailMessage;
 	}
@@ -129,5 +122,25 @@ public class CreateSplittedFilesParameter {
 	public void setMailGenMehtod(MailGenMethod mailGenMehtod) {
 		
 		this.mailGenMehtod = mailGenMehtod;
+	}
+	
+	public Path getEmailPath() {
+		
+		return emailPath;
+	}
+	
+	public void setEmailPath(Path emailPath) {
+		
+		this.emailPath = emailPath;
+	}
+	
+	public Optional<String> getEmailHTMLMessage() {
+		
+		return emailHTMLTextPath;
+	}
+	
+	public void setEmailHTMLMessage(Optional<String> emailHTMLMessage) {
+		
+		this.emailHTMLTextPath = emailHTMLMessage;
 	}
 }
