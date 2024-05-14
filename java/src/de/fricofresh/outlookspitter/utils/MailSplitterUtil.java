@@ -61,7 +61,7 @@ public class MailSplitterUtil {
 		if (parameterObject.getOutputDir().isPresent()) {
 			outputFile = Files.createDirectories(new File(parameterObject.getOutputDir().get(), "").toPath());
 			outputFile = Files.createFile(
-					Path.of(outputFile.toString(), parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject() + "_" + currendCount + parameterObject.getSuffix().orElse(fileEnding)));
+					Paths.get(outputFile.toString(), parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject() + "_" + currendCount + parameterObject.getSuffix().orElse(fileEnding)));
 		}
 		else {
 			outputFile = Files.createTempFile(parameterObject.getPrefix().orElse("") + parameterObject.getEmailMessage().getSubject(), parameterObject.getSuffix().orElse(fileEnding));
