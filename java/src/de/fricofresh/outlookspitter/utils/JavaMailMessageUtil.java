@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,14 +34,14 @@ public class JavaMailMessageUtil {
 	public static Message createMessage(CreateSplittedFilesParameter parameters) {
 		
 		try {
-			// MimeMessage msg = new MimeMessage(new OutlookMessageExtended(parameters.getEmailPath().toFile()).toMimeMessage().getSession(), new FileInputStream(parameters.getEmailPath().toString()));
 			OutlookMessageExtended outlookMessageExtended = new OutlookMessageExtended(parameters.getEmailPath().toFile());
 			MimeMessage msg = outlookMessageExtended.toMimeMessage();
 			
-			// TODO copy text
 			if (parameters.getEmailHTMLMessage().isPresent()) {
 				byte[] encoded = Files.readAllBytes(Paths.get(parameters.getEmailHTMLMessage().get()));
 				String htmlContent = new String(encoded, StandardCharsets.ISO_8859_1);
+				// FIXME
+				htmlContent = Pattern.compile("(\\r\\n.+)+\\s{7,}.+(\\r\\n.+)+", Pattern.MULTILINE).matcher(htmlContent).replaceAll("");
 				MimeBodyPart body = new MimeBodyPart();
 				MimeMultipart multipart = new MimeMultipart();
 				body.setText(htmlContent, "UTF-8", "html");
