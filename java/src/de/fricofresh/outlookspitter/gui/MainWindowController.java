@@ -31,6 +31,10 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
 
 public class MainWindowController {
 	
@@ -110,20 +114,20 @@ public class MainWindowController {
 				emails.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(recipientsToText, Type.TO));
 			}
 			if (new File(recipientsCCText).exists()) {
-				emails.addAll(MailSplitterUtil.getOutlookRecipientsList(MailSplitterUtil.extractMailsFromFile(new File(recipientsToText)), Type.CC));
+				emails.addAll(MailSplitterUtil.getOutlookRecipientsList(MailSplitterUtil.extractMailsFromFile(new File(recipientsCCText)), Type.CC));
 			}
 			else if (recipientsCCText.contains(";")) {
 				emails.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(recipientsCCText, Type.CC));
 			}
 			if (new File(recipientsBCCText).exists()) {
-				emails.addAll(MailSplitterUtil.getOutlookRecipientsList(MailSplitterUtil.extractMailsFromFile(new File(recipientsToText)), Type.BCC));
+				emails.addAll(MailSplitterUtil.getOutlookRecipientsList(MailSplitterUtil.extractMailsFromFile(new File(recipientsBCCText)), Type.BCC));
 			}
 			else if (recipientsBCCText.contains(";")) {
 				emails.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(recipientsBCCText, Type.BCC));
 			}
 			
 			if (emails.isEmpty()) {
-				new AdvancedAlert("Fehler beim der Liste der E-Mails", "Bitte gebe eine Datei oder eine Liste, welche die E-Mails aus Outlook herauskopiert wurden an.", AlertType.ERROR).show();
+				new AdvancedAlert("Fehler beim der Liste der E-Mails", "Bitte gebe eine Datei oder eine Liste, welche die E-Mails aus Outlook herauskopiert wurden an.", AlertType.ERROR);
 				return;
 			}
 			
@@ -170,36 +174,65 @@ public class MainWindowController {
 	@FXML
 	void handleBaseMailFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("E-Mail Auswählen", "*.msg", "*.oft"));
+		this.baseMailTextField.setText(choosenFile.getPath());
 	}
 	
 	@FXML
 	void handleEmailHTMLFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("Exportierte HTML E-Mail Auswählen", "*.html", "*.htm"));
+		if (choosenFile != null)
+			this.emailHTMLTextField.setText(choosenFile.getPath());
 	}
 	
 	@FXML
 	void handleOutlookExeFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("outlook.exe Datei auswählen", "*.exe"));
+		if (choosenFile != null)
+			this.outlookExeTextField.setText(choosenFile.getPath());
 	}
 	
 	@FXML
 	void handleOutputFileFilePicker(ActionEvent event) {
 		
+		DirectoryChooser chooser = new DirectoryChooser();
+		chooser.setTitle("Wähle einen Ordner aus");
+		this.outputTextField.setText(chooser.showDialog(new Stage()).getPath());
 	}
 	
 	@FXML
 	void handleToRecipientsFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("Datei auswählen", "*.*"));
+		if (choosenFile != null)
+			this.recipientsToTextfield.setText(choosenFile.getPath());
 	}
 	
 	@FXML
 	void handleCCRecipientsFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("Datei auswählen", "*.*"));
+		if (choosenFile != null)
+			this.recipientsCCTextfield.setText(choosenFile.getPath());
 	}
 	
 	@FXML
 	void handleBCCRecipientsFilePicker(ActionEvent event) {
 		
+		File choosenFile = openFileChooser(new ExtensionFilter("Datei auswählen", "*.*"));
+		if (choosenFile != null)
+			this.recipientsBCCTextfield.setText(choosenFile.getPath());
+	}
+	
+	private File openFileChooser(ExtensionFilter extentionFilter) {
+		
+		FileChooser result = new FileChooser();
+		// result.setSelectedExtensionFilter(extentionFilter);
+		result.getExtensionFilters().add(extentionFilter);
+		// result.selectedExtensionFilterProperty().set(extentionFilter);
+		return result.showOpenDialog(new Stage());
 	}
 	
 	@FXML // This method is called by the FXMLLoader when initialization is complete

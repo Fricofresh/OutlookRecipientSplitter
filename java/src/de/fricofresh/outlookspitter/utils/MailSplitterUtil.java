@@ -88,7 +88,7 @@ public class MailSplitterUtil {
 		
 		for (Path file : files) {
 			String openParam = "/f";
-			if (file.endsWith("eml"))
+			if (file.toString().endsWith("eml"))
 				openParam = "/eml";
 			
 			new ProcessBuilder().command(outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()), openParam, file.toAbsolutePath().toString()).start();
@@ -107,7 +107,8 @@ public class MailSplitterUtil {
 			String line;
 			while ((line = br.readLine()) != null) {
 				if (line.contains(";")) {
-					line = OutlookMessageExtended.extractEmail(line);
+					OutlookMessageExtended.splitAdresses(line).stream().map(OutlookMessageExtended::extractEmail).forEach(result::add);
+					continue;
 				}
 				result.add(line);
 			}
