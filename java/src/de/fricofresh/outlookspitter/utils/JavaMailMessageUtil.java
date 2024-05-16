@@ -74,7 +74,7 @@ public class JavaMailMessageUtil {
 		return null;
 	}
 	
-	public static List<Path> createSplittedFiles(CreateSplittedFilesParameter parameterObject) {
+	public static List<Path> createSplittedFiles(CreateSplittedFilesParameter parameterObject) throws IOException, ChunkNotFoundException, MessagingException {
 		
 		List<Path> result = new ArrayList<>();
 		
@@ -118,19 +118,14 @@ public class JavaMailMessageUtil {
 		return result;
 	}
 	
-	public static Message writeTempMessage(CreateSplittedFilesParameter parameterObject, List<Path> result, Message tempMessage) {
+	public static Message writeTempMessage(CreateSplittedFilesParameter parameterObject, List<Path> result, Message tempMessage) throws IOException, ChunkNotFoundException, MessagingException {
 		
-		try {
-			Path outputFile = MailSplitterUtil.getOutputFile(parameterObject, result.size());
-			try (FileOutputStream fos = new FileOutputStream(outputFile.toFile())) {
-				
-				tempMessage.writeTo(fos);
-			}
-			result.add(outputFile);
+		Path outputFile = MailSplitterUtil.getOutputFile(parameterObject, result.size());
+		try (FileOutputStream fos = new FileOutputStream(outputFile.toFile())) {
+			
+			tempMessage.writeTo(fos);
 		}
-		catch (IOException | MessagingException | ChunkNotFoundException e) {
-			log.error(e, e);
-		}
+		result.add(outputFile);
 		
 		tempMessage = createMessage(parameterObject);
 		return tempMessage;

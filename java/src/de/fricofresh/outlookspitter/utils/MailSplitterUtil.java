@@ -1,20 +1,33 @@
 package de.fricofresh.outlookspitter.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 
+import ch.astorm.jotlmsg.OutlookMessageRecipient;
+import ch.astorm.jotlmsg.OutlookMessageRecipient.Type;
 import de.fricofresh.outlookspitter.CreateSplittedFilesParameter;
 
 public class MailSplitterUtil {
 	
-	private final static String guessedOutlookPath = "%ProgramFiles%\\Microsoft Office\\root\\";
+	private final static String guessedOutlookPath = "C:\\Program Files\\Microsoft Office\\root\\";
+	
+	private static Logger log = LogManager.getLogger(MailSplitterUtil.class);
 	
 	// TODO Export createMessage and addRecipient into a Interface for JavaMailMessageUtil and OutlookSplitterProcessorUtil
 	// public static List<Path> createSplittedFiles(CreateSplittedFilesParameter parameterObject) {
@@ -73,12 +86,55 @@ public class MailSplitterUtil {
 		
 		Optional<Path> foundOutlookPath = Files.walk(Paths.get(guessedOutlookPath), 2).filter(e -> e.getFileName().toString().equals("OUTLOOK.EXE")).findFirst();
 		
-		for (Path file : files)
-			new ProcessBuilder().command("start", outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()), "/f", file.toAbsolutePath().toString()).start();
+		for (Path file : files) {
+			String openParam = "/f";
+			if (file.endsWith("eml"))
+				openParam = "/eml";
+			
+			new ProcessBuilder().command(outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()), openParam, file.toAbsolutePath().toString()).start();
+		}
 		// Alternative:
 		// Runtime.getRuntime().exec("start",
-		// outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()),
+		// outlookPath.orElse(foundOutlookPath.get().toAbsolutePath().toString()), openParam,
 		// file.toAbsolutePath().toString()), new String[]
 		// {pathToFile.toAbsolutePath().toString()});
+	}
+	
+	public static List<String> extractMailsFromFile(File file) {
+		
+		List<String> result = new ArrayList<>();
+		try (InputStream inputStream = new FileInputStream(file); BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (line.contains(";")) {
+					line = OutlookMessageExtended.extractEmail(line);
+				}
+				result.add(line);
+			}
+		}
+		catch (FileNotFoundException e) {
+			log.error(e, e);
+		}
+		catch (IOException e) {
+			log.error(e, e);
+		}
+		return result;
+	}
+	
+	public static List<OutlookMessageRecipient> getOutlookRecipientsList(String[] emailAdresses, Type type) {
+		
+		return getOutlookRecipientsList(Arrays.asList(emailAdresses), type);
+	}
+	
+	public static List<OutlookMessageRecipient> getOutlookRecipientsList(List<String> emailAdresses, Type type) {
+		
+		List<OutlookMessageRecipient> result = new ArrayList<>();
+		if (emailAdresses.isEmpty())
+			return result;
+		
+		for (String email : emailAdresses) {
+			result.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(email, type));
+		}
+		return result;
 	}
 }

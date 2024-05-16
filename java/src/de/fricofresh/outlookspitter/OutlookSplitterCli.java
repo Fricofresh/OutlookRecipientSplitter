@@ -58,7 +58,7 @@ public class OutlookSplitterCli {
 		
 		Option prefixFileNameOption = Option.builder().option("p").longOpt("prefix").hasArg().required(false).optionalArg(true).desc("Add a Prefix to the files").build();
 		Option suffixFileNameOption = Option.builder().option("su").longOpt("suffix").hasArg().required(false).optionalArg(true).desc("Add a Suffix to the files").build();
-		Option outputDirOption = Option.builder().option("o").longOpt("outputdir").hasArg().required(false).desc("").build();
+		Option outputDirOption = Option.builder().option("o").longOpt("outputdir").hasArg().required(false).desc("Choose a output directory where the splitted files schould be placed.").build();
 		Option mailGenMethodOption = Option.builder().option("mgm").longOpt("mailGenMethod").hasArg().required(false).converter(MailGenMethod::valueOf)
 				.desc("Trying to create Messages with other Methods. Default Method is POI. Methots are:" + MailGenMethod.values()).build();
 		Option emailHTMLTextPathOption = Option.builder().option("ht").longOpt("html").hasArg().required(false).build();
@@ -95,9 +95,9 @@ public class OutlookSplitterCli {
 			MailGenMethod mailGenMethod = cmd.getParsedOptionValue(mailGenMethodOption, MailGenMethod.POI);
 			Optional<String> emailHTMLTextPath = Optional.ofNullable(cmd.getOptionValue(emailHTMLTextPathOption));
 			
-			List<OutlookMessageRecipient> toOutlookRecipientsList = getOutlookRecipientsList(emailToAdresses, Type.TO);
-			List<OutlookMessageRecipient> ccOutlookRecipientsList = getOutlookRecipientsList(emailCCAdresses, Type.CC);
-			List<OutlookMessageRecipient> bccOutlookRecipientsList = getOutlookRecipientsList(emailBCCAdresses, Type.BCC);
+			List<OutlookMessageRecipient> toOutlookRecipientsList = MailSplitterUtil.getOutlookRecipientsList(emailToAdresses, Type.TO);
+			List<OutlookMessageRecipient> ccOutlookRecipientsList = MailSplitterUtil.getOutlookRecipientsList(emailCCAdresses, Type.CC);
+			List<OutlookMessageRecipient> bccOutlookRecipientsList = MailSplitterUtil.getOutlookRecipientsList(emailBCCAdresses, Type.BCC);
 			
 			List<OutlookMessageRecipient> recipientsForAll = new ArrayList<>();
 			List<OutlookMessageRecipient> recipientsToSplit = new ArrayList<>();
@@ -142,7 +142,7 @@ public class OutlookSplitterCli {
 					break;
 			}
 			if (cmd.hasOption(openAfterFinishedOption)) {
-				MailSplitterUtil.openFiles(createSplittedFiles, Optional.empty());
+				MailSplitterUtil.openFiles(createSplittedFiles, Optional.ofNullable(openAfterFinishedOption.getValue()));
 			}
 		}
 		catch (IOException e) {
@@ -152,19 +152,6 @@ public class OutlookSplitterCli {
 			printHelp(cliOptions);
 			log.error(e, e);
 		}
-	}
-	
-	private static List<OutlookMessageRecipient> getOutlookRecipientsList(String[] emailAdresses, Type type) {
-		
-		if (emailAdresses == null)
-			return new ArrayList<>();
-		
-		List<OutlookMessageRecipient> result = new ArrayList<>();
-		for (String email : emailAdresses) {
-			result.addAll(OutlookSplitterProcessorUtil.receiveOutlookRecipients(email, type));
-		}
-		
-		return result;
 	}
 	
 	private static boolean checkHelpCommand(String[] args) {

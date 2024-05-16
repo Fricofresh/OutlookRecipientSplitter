@@ -1,12 +1,6 @@
 package de.fricofresh.outlookspitter.utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,24 +82,6 @@ public class OutlookSplitterProcessorUtil {
 				tempMessage = (OutlookMessageExtended) baseMessage.clone();
 		}
 		return tempMessage;
-	}
-	
-	public static List<String> extractMailsFromFile(File file) {
-		
-		List<String> result = new ArrayList<>();
-		try (InputStream inputStream = new FileInputStream(file); BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				result.add(line);
-			}
-		}
-		catch (FileNotFoundException e) {
-			log.error(e, e);
-		}
-		catch (IOException e) {
-			log.error(e, e);
-		}
-		return result;
 	}
 	
 }
