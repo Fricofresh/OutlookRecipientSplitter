@@ -199,7 +199,8 @@ public class MainWindowController {
 		
 		DirectoryChooser chooser = new DirectoryChooser();
 		chooser.setTitle("Wähle einen Ordner aus");
-		this.outputTextField.setText(chooser.showDialog(new Stage()).getPath());
+		if (chooser != null)
+			this.outputTextField.setText(chooser.showDialog(new Stage()).getPath());
 	}
 	
 	@FXML
