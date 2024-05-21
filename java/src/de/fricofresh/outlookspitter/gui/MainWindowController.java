@@ -175,7 +175,8 @@ public class MainWindowController {
 	void handleBaseMailFilePicker(ActionEvent event) {
 		
 		File choosenFile = openFileChooser(new ExtensionFilter("E-Mail Auswählen", "*.msg", "*.oft"));
-		this.baseMailTextField.setText(choosenFile.getPath());
+		if (choosenFile != null)
+			this.baseMailTextField.setText(choosenFile.getPath());
 	}
 	
 	@FXML
@@ -199,8 +200,9 @@ public class MainWindowController {
 		
 		DirectoryChooser chooser = new DirectoryChooser();
 		chooser.setTitle("Wähle einen Ordner aus");
-		if (chooser != null)
-			this.outputTextField.setText(chooser.showDialog(new Stage()).getPath());
+		File choosenFile = chooser.showDialog(new Stage());
+		if (choosenFile != null)
+			this.outputTextField.setText(choosenFile.getPath());
 	}
 	
 	@FXML
