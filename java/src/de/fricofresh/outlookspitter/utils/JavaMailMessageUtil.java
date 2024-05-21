@@ -1,18 +1,21 @@
 package de.fricofresh.outlookspitter.utils;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import ch.astorm.jotlmsg.OutlookMessageAttachment;
 import ch.astorm.jotlmsg.OutlookMessageRecipient;
@@ -31,6 +34,8 @@ public class JavaMailMessageUtil {
 	
 	private static Logger log = LogManager.getLogger(JavaMailMessageUtil.class);
 	
+	public static String htmlContent;
+	
 	public static Message createMessage(CreateSplittedFilesParameter parameters) {
 		
 		try {
@@ -38,10 +43,7 @@ public class JavaMailMessageUtil {
 			MimeMessage msg = outlookMessageExtended.toMimeMessage();
 			
 			if (parameters.getEmailHTMLMessage().isPresent()) {
-				byte[] encoded = Files.readAllBytes(Paths.get(parameters.getEmailHTMLMessage().get()));
-				String htmlContent = new String(encoded, StandardCharsets.ISO_8859_1);
-				// FIXME
-				htmlContent = Pattern.compile("(\\r\\n.+)+\\s{7,}.+(\\r\\n.+)+", Pattern.MULTILINE).matcher(htmlContent).replaceAll("");
+				grabHTMLcontent(parameters);
 				MimeBodyPart body = new MimeBodyPart();
 				MimeMultipart multipart = new MimeMultipart();
 				body.setText(htmlContent, "UTF-8", "html");
@@ -72,7 +74,32 @@ public class JavaMailMessageUtil {
 		catch (IOException | MessagingException e) {
 			log.error(e, e);
 		}
+		finally {
+			htmlContent = null;
+		}
 		return null;
+	}
+	
+	private static void grabHTMLcontent(CreateSplittedFilesParameter parameters) throws IOException {
+		
+		if (htmlContent == null) {
+			Document doc = Jsoup.parse(new File(parameters.getEmailHTMLMessage().get()));
+			Elements elementsMatchingText = doc.getElementsByTag("p");
+			for (int i = 0, j = 0; i < elementsMatchingText.size(); i++) {
+				
+				Element element = elementsMatchingText.get(i);
+				Matcher matcher = Pattern.compile("(?:&nbsp;){7,}").matcher(element.outerHtml());
+				if (element.outerHtml().contains(":") && matcher.find()) {
+					elementsMatchingText.get(i).remove();
+					j++;
+				}
+				if (j <= i) {
+					elementsMatchingText.get(i).remove();
+					break;
+				}
+			}
+			htmlContent = doc.outerHtml();
+		}
 	}
 	
 	public static List<Path> createSplittedFiles(CreateSplittedFilesParameter parameterObject) throws IOException, ChunkNotFoundException, MessagingException {
