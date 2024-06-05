@@ -53,7 +53,6 @@ public class OutlookSplitterCli {
 		Option splitBCCAdressesOption = Option.builder().option("sb").longOpt("splitBCC").hasArg(false).desc("BCC E-Mail-Adresses should be splitted").build();
 		
 		Option splitValueOption = Option.builder().option("s").longOpt("split").hasArg().required(true).desc("The number of email addresses when to split").type(Integer.TYPE).build();
-		// TODO Add optional arguments for setting the outlook.exe path
 		Option openAfterFinishedOption = Option.builder().option("oc").longOpt("openCreated").optionalArg(true).desc("Open files when finished. A path to the Outlook.exe can be provided.").build();
 		
 		Option prefixFileNameOption = Option.builder().option("p").longOpt("prefix").hasArg().required(false).optionalArg(true).desc("Add a Prefix to the files").build();

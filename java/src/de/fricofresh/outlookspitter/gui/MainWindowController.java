@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -140,7 +141,7 @@ public class MainWindowController {
 				return;
 			}
 			
-			csfParameter.setEmailPath(Path.of(baseMailTextField.getText()));
+			csfParameter.setEmailPath(Paths.get(baseMailTextField.getText()));
 			try {
 				csfParameter.setEmailMessage(new MAPIMessage(new File(baseMailTextField.getText())));
 			}
@@ -153,7 +154,7 @@ public class MainWindowController {
 			List<Path> splittedFiles = JavaMailMessageUtil.createSplittedFiles(csfParameter);
 			
 			if (openAfterCreationCheckBox.isSelected()) {
-				MailSplitterUtil.openFiles(splittedFiles, outlookExeTextField.getText().isBlank() ? Optional.empty() : Optional.ofNullable(outlookExeTextField.getText()));
+				MailSplitterUtil.openFiles(splittedFiles, outlookExeTextField.getText().trim().isEmpty() ? Optional.empty() : Optional.ofNullable(outlookExeTextField.getText()));
 			}
 		}
 		catch (FileAlreadyExistsException e) {
