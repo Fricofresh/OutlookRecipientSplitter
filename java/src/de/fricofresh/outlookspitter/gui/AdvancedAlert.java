@@ -2,6 +2,7 @@ package de.fricofresh.outlookspitter.gui;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 
 public class AdvancedAlert extends Alert {
@@ -26,6 +27,7 @@ public class AdvancedAlert extends Alert {
 			setTitle("Warnung");
 		else
 			setTitle("Meldung");
+		this.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
 		setHeaderText(headerText);
 		setContentText(content);
 		showAndWait();
