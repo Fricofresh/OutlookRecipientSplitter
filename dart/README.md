@@ -1,37 +1,43 @@
-# Outlook Recipient Splitter (Dart rewrite)
+# Outlook Recipient Splitter
 
-This branch contains a Dart rewrite of the original Java CLI that splits a single Outlook `.msg` template into multiple output files based on recipient batches.
+A Dart CLI that mirrors the Java application's batch-splitting workflow for Outlook mail templates.
 
-Important note
-- The original Java implementation depends on the proprietary Outlook / MAPI API stack (`jotlmsg`, Apache POI, and Windows Outlook integration).
-- This Dart port keeps the same CLI shape and splitting logic, but it is implemented as a portable Dart CLI that copies the base `.msg` file into batch outputs and stores a JSON sidecar with the recipients used for each generated file.
-- This makes the project portable and keeps the behavior understandable without needing the Windows-only Outlook stack.
+What it does
+- Reads an input `.msg` file.
+- Parses TO / CC / BCC recipient lists.
+- Splits recipients into multiple output message files based on a configured batch size.
+- Writes one output `.msg` per batch.
+- Stores a companion JSON metadata file for each generated message.
+- Optionally opens generated files with the default OS handler.
 
-Usage
+CLI usage
 
 ```bash
 dart run bin/outlook_recipient_splitter.dart \
-  -i "C:/path/to/template.msg" \
+  -i "C:/input/template.msg" \
   -t "first@example.com;second@example.com" \
-  -c "cc@example.com" \
-  -b "bcc@example.com" \
+  -c "cc1@example.com;cc2@example.com" \
+  -b "bcc1@example.com" \
   -s 25 \
-  -o "C:/temp/outlook-splits"
+  -st \
+  -o "C:/output/splits"
 ```
 
-Supported flags
-- `-i`, `--msginput`: input `.msg` path
-- `-t`, `--to`: TO recipients
-- `-c`, `--cc`: CC recipients
-- `-b`, `--bcc`: BCC recipients
-- `-st`, `--splitTo`: send TO recipients to the split list
-- `-sc`, `--splitCC`: send CC recipients to the split list
-- `-sb`, `--splitBCC`: send BCC recipients to the split list
-- `-s`, `--split`: split size
-- `-p`, `--prefix`: filename prefix
-- `-su`, `--suffix`: filename suffix
-- `-o`, `--outputdir`: target folder
-- `-oc`, `--openCreated`: open generated files after creation
-- `-mgm`, `--mailGenMethod`: generator strategy (defaults to `POI`)
+Supported arguments
+- `-i`, `--msginput` : source `.msg` file
+- `-t`, `--to` : TO recipients
+- `-c`, `--cc` : CC recipients
+- `-b`, `--bcc` : BCC recipients
+- `-st`, `--splitTo` : move TO recipients into the split list
+- `-sc`, `--splitCC` : move CC recipients into the split list
+- `-sb`, `--splitBCC` : move BCC recipients into the split list
+- `-s`, `--split` : maximum recipients per generated file
+- `-p`, `--prefix` : file-name prefix
+- `-su`, `--suffix` : file-name suffix (default `.msg`)
+- `-o`, `--outputdir` : output directory
+- `-oc`, `--openCreated` : open generated files after creation
+- `-mgm`, `--mailGenMethod` : generator method name (`POI`, `POIADVANCEDCOPY`, ...)
+- `-h`, `--help` : show help
 
-The Java source that this rewrite follows is located under `java/src/de/fricofresh/outlookspitter/`.
+The Java implementation this project mirrors lives under:
+`java/src/de/fricofresh/outlookspitter/`

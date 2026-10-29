@@ -1,0 +1,125 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import '../models/mail_gen_method.dart';
+import '../models/recipient.dart';
+import '../models/split_parameters.dart';
+
+class OutlookSplitterProcessor {
+  static List<File> createSplitFiles(CreateSplitFilesParameters parameters) {
+    final sourceFile = File(parameters.msgInputPath);
+    if (!sourceFile.existsSync()) {
+      throw FileSystemException('Input message file not found', parameters.msgInputPath);
+    }
+
+    final outputDirectory = _resolveOutputDirectory(parameters.outputDir);
+    final files = <File>[];
+
+    final nonSplitRecipients = List<OutlookRecipient>.from(parameters.recipients);
+    final splitRecipients = List<OutlookRecipient>.from(parameters.recipientsToSplit);
+
+    if (splitRecipients.isEmpty) {
+      final file = _createOutputFile(
+        sourceFile: sourceFile,
+        directory: outputDirectory,
+        fileNamePrefix: parameters.prefix,
+        fileNameSuffix: parameters.suffix,
+        recipients: nonSplitRecipients,
+        sequenceNumber: 1,
+      );
+      files.add(file);
+      return files;
+    }
+
+    final batches = <List<OutlookRecipient>>[];
+    for (var index = 0; index < splitRecipients.length; index += parameters.split) {
+      final end = (index + parameters.split < splitRecipients.length)
+          ? index + parameters.split
+          : splitRecipients.length;
+      batches.add(splitRecipients.sublist(index, end));
+    }
+
+    for (var batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      final batch = batches[batchIndex];
+      final recipientsForFile = <OutlookRecipient>[]
+        ..addAll(nonSplitRecipients)
+        ..addAll(batch);
+
+      final file = _createOutputFile(
+        sourceFile: sourceFile,
+        directory: outputDirectory,
+        fileNamePrefix: parameters.prefix,
+        fileNameSuffix: parameters.suffix,
+        recipients: recipientsForFile,
+        sequenceNumber: batchIndex + 1,
+      );
+      files.add(file);
+    }
+
+    return files;
+  }
+
+  static Future<void> openFiles(List<File> files) async {
+    for (final file in files) {
+      if (!file.existsSync()) {
+        continue;
+      }
+
+      if (Platform.isWindows) {
+        await Process.start('cmd', ['/c', 'start', '', file.path]);
+      } else if (Platform.isMacOS) {
+        await Process.start('open', [file.path]);
+      } else if (Platform.isLinux) {
+        await Process.start('xdg-open', [file.path]);
+      }
+    }
+  }
+
+  static Directory _resolveOutputDirectory(String? outputDir) {
+    final directory = outputDir == null || outputDir.trim().isEmpty
+        ? Directory.systemTemp.createTempSync('outlook_splitter_')
+        : Directory(outputDir);
+
+    directory.createSync(recursive: true);
+    return directory;
+  }
+
+  static File _createOutputFile({
+    required File sourceFile,
+    required Directory directory,
+    required String? fileNamePrefix,
+    required String? fileNameSuffix,
+    required List<OutlookRecipient> recipients,
+    required int sequenceNumber,
+  }) {
+    final sourceName = p.basenameWithoutExtension(sourceFile.path);
+    final normalizedSuffix = _normalizeSuffix(fileNameSuffix ?? '.msg');
+    final prefix = fileNamePrefix ?? '';
+    final outputFileName = '${prefix}${sourceName}_${sequenceNumber}${normalizedSuffix}';
+    final outputFile = File(p.join(directory.path, outputFileName));
+
+    outputFile.writeAsBytesSync(sourceFile.readAsBytesSync(), flush: true);
+
+    final metadata = {
+      'sourceFile': sourceFile.path,
+      'createdAtUtc': DateTime.now().toUtc().toIso8601String(),
+      'mailGenMethod': MailGenMethod.poi.name,
+      'recipients': recipients.map((recipient) => recipient.toJson()).toList(),
+    };
+    outputFile.parent
+        .childFile('${p.withoutExtension(outputFile.path)}.json')
+        .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(metadata));
+
+    return outputFile;
+  }
+
+  static String _normalizeSuffix(String suffix) {
+    final normalized = suffix.trim();
+    if (normalized.isEmpty) {
+      return '.msg';
+    }
+    return normalized.startsWith('.') ? normalized : '.${normalized}';
+  }
+}
