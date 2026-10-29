@@ -1,15 +1,5 @@
-name: outlook_recipient_splitter
+import 'package:outlook_recipient_splitter/outlook_recipient_splitter.dart';
 
-description: A production-ready Dart CLI for splitting Outlook message batches by recipient.
-version: 1.0.0
-publish_to: 'none'
-
-environment:
-  sdk: '^3.3.0'
-
-dependencies:
-  args: ^2.5.0
-  path: ^1.9.0
-
-dev_dependencies:
-  lints: ^4.0.0
+Future<void> main(List<String> arguments) async {
+  await CliApp.run(arguments);
+}

@@ -3,9 +3,10 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../models/create_split_files_parameters.dart';
 import '../models/mail_gen_method.dart';
 import '../models/outlook_recipient.dart';
-import '../models/create_split_files_parameters.dart';
+import 'outlook_message_generator.dart';
 
 class OutlookSplitterProcessor {
   static List<File> createSplitFiles(CreateSplitFilesParameters parameters) {
@@ -18,15 +19,24 @@ class OutlookSplitterProcessor {
     final recipientsForNonSplit = List<OutlookRecipient>.from(parameters.recipients);
     final splitRecipients = List<OutlookRecipient>.from(parameters.recipientsToSplit);
 
+    if (parameters.msgInputPath.toLowerCase().endsWith('.msg') == false) {
+      throw const FormatException('The source file must be a .msg template file.');
+    }
+
     if (splitRecipients.isEmpty) {
-      final file = _createOutputFile(
-        sourceFile: sourceFile,
-        directory: outputDirectory,
-        sourceName: p.basenameWithoutExtension(sourceFile.path),
-        prefix: parameters.prefix ?? '',
-        suffix: _normalizeSuffix(parameters.suffix ?? '.msg'),
-        recipients: recipientsForNonSplit,
+      final outputName = _buildOutputFileName(
+        baseName: p.basenameWithoutExtension(sourceFile.path),
         sequenceNumber: 1,
+        prefix: parameters.prefix ?? '',
+        suffix: parameters.suffix ?? '.msg',
+      );
+
+      final file = OutlookMessageGenerator.buildFromTemplate(
+        templateFile: sourceFile,
+        outputDirectory: outputDirectory,
+        outputFileName: outputName,
+        recipients: recipientsForNonSplit,
+        mailGenMethod: parameters.mailGenMethod,
       );
       return <File>[file];
     }
@@ -42,15 +52,21 @@ class OutlookSplitterProcessor {
         ..addAll(recipientsForNonSplit)
         ..addAll(batch);
 
-      final file = _createOutputFile(
-        sourceFile: sourceFile,
-        directory: outputDirectory,
-        sourceName: p.basenameWithoutExtension(sourceFile.path),
-        prefix: parameters.prefix ?? '',
-        suffix: _normalizeSuffix(parameters.suffix ?? '.msg'),
-        recipients: recipientsForThisFile,
+      final outputName = _buildOutputFileName(
+        baseName: p.basenameWithoutExtension(sourceFile.path),
         sequenceNumber: files.length + 1,
+        prefix: parameters.prefix ?? '',
+        suffix: parameters.suffix ?? '.msg',
       );
+
+      final file = OutlookMessageGenerator.buildFromTemplate(
+        templateFile: sourceFile,
+        outputDirectory: outputDirectory,
+        outputFileName: outputName,
+        recipients: recipientsForThisFile,
+        mailGenMethod: parameters.mailGenMethod,
+      );
+
       files.add(file);
     }
 
@@ -81,36 +97,17 @@ class OutlookSplitterProcessor {
     return directory;
   }
 
-  static File _createOutputFile({
-    required File sourceFile,
-    required Directory directory,
-    required String sourceName,
+  static String _buildOutputFileName({
+    required String baseName,
+    required int sequenceNumber,
     required String prefix,
     required String suffix,
-    required List<OutlookRecipient> recipients,
-    required int sequenceNumber,
   }) {
-    final outputFile = File(p.join(directory.path, '${prefix}${sourceName}_$sequenceNumber$suffix'));
-    outputFile.writeAsBytesSync(sourceFile.readAsBytesSync(), flush: true);
+    final normalizedSuffix = suffix.trim();
+    final finalSuffix = normalizedSuffix.isEmpty
+        ? '.msg'
+        : (normalizedSuffix.startsWith('.') ? normalizedSuffix : '.${normalizedSuffix}');
 
-    final metadata = {
-      'sourceFile': sourceFile.path,
-      'createdAtUtc': DateTime.now().toUtc().toIso8601String(),
-      'mailGenMethod': MailGenMethod.poi.name,
-      'recipients': recipients.map((recipient) => recipient.toJson()).toList(),
-    };
-
-    final metadataFile = File('${p.withoutExtension(outputFile.path)}.json');
-    metadataFile.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(metadata));
-
-    return outputFile;
-  }
-
-  static String _normalizeSuffix(String suffix) {
-    final raw = suffix.trim();
-    if (raw.isEmpty) {
-      return '.msg';
-    }
-    return raw.startsWith('.') ? raw : '.$raw';
+    return '${prefix}${baseName}_$sequenceNumber$finalSuffix';
   }
 }

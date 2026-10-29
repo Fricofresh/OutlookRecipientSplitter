@@ -1,24 +1,38 @@
-import 'mail_gen_method.dart';
-import 'outlook_recipient.dart';
+import 'dart:io';
 
-class CreateSplitFilesParameters {
-  const CreateSplitFilesParameters({
-    required this.msgInputPath,
-    required this.recipients,
-    required this.recipientsToSplit,
-    required this.split,
-    this.prefix,
-    this.suffix,
-    this.outputDir,
-    this.mailGenMethod = MailGenMethod.poi,
-  });
+import '../models/mail_gen_method.dart';
+import '../models/outlook_recipient.dart';
 
-  final String msgInputPath;
-  final List<OutlookRecipient> recipients;
-  final List<OutlookRecipient> recipientsToSplit;
-  final int split;
-  final String? prefix;
-  final String? suffix;
-  final String? outputDir;
-  final MailGenMethod mailGenMethod;
+class OutlookMessageGenerator {
+  static File buildFromTemplate({
+    required File templateFile,
+    required Directory outputDirectory,
+    required String outputFileName,
+    required List<OutlookRecipient> recipients,
+    required MailGenMethod mailGenMethod,
+  }) {
+    if (!templateFile.existsSync()) {
+      throw FileSystemException('Template .msg file not found', templateFile.path);
+    }
+
+    final outputFile = File('${outputDirectory.path}${Platform.pathSeparator}$outputFileName');
+    outputDirectory.createSync(recursive: true);
+
+    final bytes = templateFile.readAsBytesSync();
+    outputFile.writeAsBytesSync(bytes, flush: true);
+
+    final metadata = {
+      'templateFile': templateFile.path,
+      'createdAtUtc': DateTime.now().toUtc().toIso8601String(),
+      'mailGenMethod': mailGenMethod.name,
+      'recipients': recipients.map((recipient) => recipient.toJson()).toList(),
+    };
+
+    final metadataFile = File('${outputFile.path}.json');
+    metadataFile.writeAsStringSync(
+      const JsonEncoder.withIndent('  ').convert(metadata),
+    );
+
+    return outputFile;
+  }
 }
